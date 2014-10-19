@@ -67,11 +67,9 @@ sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "nohup /root/ispn-serv
 
 function copy_job() 
 {
- copy_file $1 job.jar /home/hadoop
+ copy_file $1 *.jar /home/hadoop
  copy_file $1 *.txt /home/hadoop
- copy_file $1 copy-to-hdfs.sh /home/hadoop
- copy_file $1 run-hadoop.sh /home/hadoop
- copy_file $1 generate-file.sh /home/hadoop
+ copy_file $1 *.sh /home/hadoop
 }
 
 echo "Creating a cluster of $N slaves"
