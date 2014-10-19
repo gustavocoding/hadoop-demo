@@ -9,6 +9,7 @@ Scripts to demonstrate Infinispan Hadoop Integration inside Docker
 * Docker service started
 * Maven
 * sshpass (yum install sshpass)
+* ruby
 
 ### Obtain projects and build custom infinispan branch
 
