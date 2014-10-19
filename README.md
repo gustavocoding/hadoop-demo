@@ -18,7 +18,7 @@ mkdir demo && cd demo
 git clone https://github.com/gustavonalle/infinispan.git
 git clone https://github.com/gustavonalle/hadoop-demo.git
 git clone https://github.com/pruivo/infinispan-hadoop-integration.git
-git clone https://github.com/pruivo/hadoop-wordcount-example.git
+git clone https://github.com/gustavonalle/hadoop-wordcount-example.git
 
 cd infinispan && git checkout hadoop-fork
 mvn clean install -DskipTests=true -s maven-settings.xml
