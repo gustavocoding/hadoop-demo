@@ -55,24 +55,23 @@ Open project infinispan-hadoop-integration in the IDE and run main class ```org.
 
 ``` --host <master ip> --file ../hadoop-demo/file.txt --cachename map-reduce-in ```
 
-### Create jar of the job
-
-//TODO
-
-Open project hadoop-wordcout-example and replace all the ips for the master ip on class ``com.gustavonalle.Main```
-Deploy jar by running 
-
-
-
-``` ./deploy.sh <master ip> ```
-
-
 ### Run the hadoop job
+
+To run the job that reads and writes from/to infinispan
 
 ``` 
 ssh root@<master ip>
 cd /home/hadoop
-./run_hadoop_job.sh hadoop-sample-1.0-SNAPSHOT-jar-with-dependencies.jar
+./run_hadoop_infinispan.sh <master ip>
+```
+
+To run the same job that reads and writes from/to hdfs
+
+```
+ssh root@<master ip>
+cd /home/hadoop
+./copy-to-hdfs.sh
+./run_hadoop.sh
 ```
 
 ### Checking output
