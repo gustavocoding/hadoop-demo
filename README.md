@@ -81,3 +81,60 @@ Output will be in the cache 'map-reduce-out'
 Project infinispan-hadoop-integration has a class to dump the cache:
 
 ``` org.infinispan.hadoopintegration.util.ControllerCache --host <any docker host> --cachename map-reduce-out --dump ```
+
+### Going further
+
+The existence of an specific InputFormat allows for infinispan to become a citizen of the Hadoop ecosystem. Particularly,
+it can be used as a data source for Apache Spark.
+
+In order to run the same map reduce job, but as a Scala script through spark:
+
+Unzip the spark distribution
+
+Run
+
+``` spark-1.1.0-bin-hadoop1/bin/spark-shell --master spark://<master ip>:7077 --jars path/to/hadoop-sample-1.0-SNAPSHOT-jar-with-dependencies.jar ```
+
+The following scala script will set a ```JobConf``` and run a count on the infinispan data:
+
+```
+val host = "172.17.0.56"
+import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.conf.Configuration
+import com.gustavonalle.hadoop._
+import org.infinispan.hadoopintegration.mapreduce.input._
+import org.infinispan.hadoopintegration.mapreduce.output._
+import org.apache.hadoop.io._
+
+val configuration = new Configuration()
+configuration.set("mapreduce.ispn.inputsplit.remote.cache.host", host)
+configuration.set("mapreduce.ispn.input.remote.cache.host", host);
+configuration.set("mapreduce.ispn.output.remote.cache.host", host);
+configuration.set("mapreduce.ispn.input.cache.name", "map-reduce-in");
+configuration.set("mapreduce.ispn.output.cache.name", "map-reduce-out");
+configuration.set("mapreduce.ispn.input.converter", classOf[InputConverter].getCanonicalName())
+configuration.set("mapreduce.ispn.output.converter", classOf[OutputConverter].getCanonicalName())
+val jobConf = new JobConf(configuration)
+jobConf.setOutputKeyClass(classOf[Text])
+jobConf.setOutputValueClass(classOf[IntWritable])
+jobConf.setMapperClass(classOf[MapClass]);
+jobConf.setReducerClass(classOf[ReduceClass]);
+jobConf.setInputFormat(classOf[InfinispanInputFormat[LongWritable,Text]]);
+jobConf.setOutputFormat(classOf[InfinispanOutputFormat[Text,LongWritable]]);
+val file = sc.hadoopRDD(jobConf,classOf[InfinispanInputFormat[LongWritable,Text]],classOf[LongWritable],classOf[Text],1)
+
+```
+
+To run a map reduce job without infinispan, on top of HDFS:
+
+```
+val file = sc.textFile("hdfs://172.17.0.56:9000/redhat/file.txt")
+file.count()
+val counts = file.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _).take(2)
+```
+
+
+
+
+
+
