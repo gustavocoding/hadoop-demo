@@ -70,6 +70,17 @@ function copy_job()
  copy_file $1 '*.jar' /home/hadoop
  copy_file $1 '*.txt' /home/hadoop
  copy_file $1 '*.sh' /home/hadoop
+ copy_file $1 '*.tgz' /root/
+}
+
+function spark_server() 
+{
+sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- /root/spark-1.1.0-bin-hadoop1.tgz > log.log && export SPARK_MASTER_IP=$1 && /root/spark-1.1.0-bin-hadoop1/sbin/start-master.sh"
+}
+
+function spark_worker() 
+{
+sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- /root/spark-1.1.0-bin-hadoop1.tgz > log.log && /root/spark-1.1.0-bin-hadoop1/sbin/start-slave.sh $3 spark://$2:7077 -i $1"
 }
 
 echo "Creating a cluster of $N slaves"
@@ -87,6 +98,7 @@ set_master $IP_MASTER $IP_MASTER
 remove_slaves $IP_MASTER
 setup_server $IP_MASTER
 copy_job $IP_MASTER
+spark_server $IP_MASTER
 
 START=1
 for (( c=$START; c<=$N; c++)) 
@@ -101,6 +113,12 @@ do
  add_slave $IP_MASTER $IP_SLAVE
  echo "Copying ispn server"
  setup_server $IP_SLAVE
+ if [ "$c" -eq 2 ]
+ then 
+   copy_job $IP_SLAVE
+   echo "Starting spark worker"
+   spark_worker $IP_SLAVE $IP_MASTER $((c-1))
+ fi
 done
 
 echo "Starting process"
