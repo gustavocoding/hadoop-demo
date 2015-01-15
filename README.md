@@ -52,13 +52,16 @@ After the cluster is created, take note of the master IP
 
 At this point the hadoop cluster admin insterfaces are accessible at:
 
+```
 http://<master ip>:50030  (jobtracker)
 http://<master ip>:50070  (namenode)
+```
 
 and the spark cluster admin at:
  
+```
 http://<master ip>:8081
-
+```
 
 ### Populate cache
 
