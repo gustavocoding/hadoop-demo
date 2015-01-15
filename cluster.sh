@@ -5,7 +5,7 @@ set -e
 N=${1:-3}
 
 # Location of the patched infinispan with extra hotrod operations 
-ISPN_SERVER_DIST=../infinispan/server/integration/build/target/infinispan-server-7.0.0.hadoop-SNAPSHOT
+ISPN_SERVER_DIST=../infinispan/server/integration/build/target/infinispan-server-7.1.0.hadoop-SNAPSHOT
 
 function run()
 {
