@@ -29,7 +29,7 @@ function copy_keys()
 
 function replace_hosts()
 {
-  exec_cmd $1 "sed -i 's/2eec834d0397/$IP_MASTER/g' /opt/hadoop/hadoop-1.1.1/conf/*.xml" 
+  exec_cmd $1 "sed -i 's/c1de208601a7/$IP_MASTER/g' /opt/hadoop/hadoop-1.1.1/conf/*.xml" 
 }
 
 function replace_slave()
@@ -73,14 +73,19 @@ function copy_job()
  copy_file $1 '*.tgz' /root/
 }
 
+function spark_download() 
+{
+wget -nc http://d3kbcqa49mib13.cloudfront.net/spark-1.2.0-bin-hadoop1.tgz 
+}
+
 function spark_server() 
 {
-sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- /root/spark-1.1.0-bin-hadoop1.tgz > log.log && export SPARK_MASTER_IP=$1 && /root/spark-1.1.0-bin-hadoop1/sbin/start-master.sh"
+sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- spark-1.2.0-bin-hadoop1.tgz > log.log && export SPARK_MASTER_IP=$1 && /root/spark-1.2.0-bin-hadoop1/sbin/start-master.sh"
 }
 
 function spark_worker() 
 {
-sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- /root/spark-1.1.0-bin-hadoop1.tgz > log.log && /root/spark-1.1.0-bin-hadoop1/sbin/start-slave.sh $3 spark://$2:7077 -i $1"
+sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- /root/spark-1.2.0-bin-hadoop1.tgz > log.log && /root/spark-1.2.0-bin-hadoop1/sbin/start-slave.sh $3 spark://$2:7077 -i $1"
 }
 
 echo "Creating a cluster of $N slaves"
@@ -92,6 +97,7 @@ IP_MASTER=$(ip $IDMASTER)
 
 echo "Master created, ip address is $IP_MASTER"
 
+spark_download
 copy_keys $IP_MASTER
 replace_hosts $IP_MASTER
 set_master $IP_MASTER $IP_MASTER

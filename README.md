@@ -50,6 +50,16 @@ Each node will be a hadoop slave plus an infinispan server node
 
 After the cluster is created, take note of the master IP
 
+At this point the hadoop cluster admin insterfaces are accessible at:
+
+http://<master ip>:50030  (jobtracker)
+http://<master ip>:50070  (namenode)
+
+and the spark cluster admin at:
+ 
+http://<master ip>:8081
+
+
 ### Populate cache
 
 Open project infinispan-hadoop-integration in the IDE and run main class ```org.infinispan.hadoopintegration.util.WorldCounterPopulator``` to populate the cache with the generated file. The following parameter should be passed
@@ -82,6 +92,7 @@ Project infinispan-hadoop-integration has a class to dump the cache:
 
 ``` org.infinispan.hadoopintegration.util.ControllerCache --host <any docker host> --cachename map-reduce-out --dump ```
 
+
 ### Going further
 
 The existence of an specific InputFormat allows for infinispan to become a citizen of the Hadoop ecosystem. Particularly,
@@ -93,11 +104,12 @@ Unzip the spark distribution
 
 Run
 
-``` spark-1.1.0-bin-hadoop1/bin/spark-shell --master spark://<master ip>:7077 --jars path/to/hadoop-sample-1.0-SNAPSHOT-jar-with-dependencies.jar ```
+``` spark-1.2.0-bin-hadoop1/bin/spark-shell --master spark://<master ip>:7077 --jars path/to/hadoop-sample-1.0-SNAPSHOT-jar-with-dependencies.jar ```
 
 The following scala script will set a ```JobConf``` and run a count on the infinispan data:
 
 ```
+// Replace the master ip
 val host = "172.17.0.56"
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.conf.Configuration
@@ -123,18 +135,16 @@ jobConf.setInputFormat(classOf[InfinispanInputFormat[LongWritable,Text]]);
 jobConf.setOutputFormat(classOf[InfinispanOutputFormat[Text,LongWritable]]);
 val file = sc.hadoopRDD(jobConf,classOf[InfinispanInputFormat[LongWritable,Text]],classOf[LongWritable],classOf[Text],1)
 
-```
+// Do a simple file count
+file.count
 
-To run a map reduce job without infinispan, on top of HDFS:
+```
+Spark also works on top of pure HDFS. The equivalent of doing a wordcount mapreduce on top of HDFS is:
 
 ```
+// replace the master ip
 val file = sc.textFile("hdfs://172.17.0.56:9000/redhat/file.txt")
 file.count()
 val counts = file.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _).take(2)
 ```
-
-
-
-
-
 
