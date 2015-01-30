@@ -5,40 +5,21 @@ Scripts to demonstrate Infinispan Hadoop Integration inside Docker
 
 ### Requirements
 
-* Linux
+* Linux/MacOS X
 * Docker service started
-* Maven
+* Maven/SBT
 * sshpass (yum install sshpass)
 * ruby
 
-### Obtain projects and build custom infinispan branch
+### Build custom branch 
 
-
+Build hadoop integration branch:
 ```
-mkdir demo && cd demo
-git clone https://github.com/gustavonalle/infinispan.git
-git clone https://github.com/gustavonalle/hadoop-demo.git
-git clone https://github.com/gustavonalle/infinispan-hadoop-integration.git
-git clone https://github.com/gustavonalle/hadoop-wordcount-example.git
-
-cd infinispan && git checkout hadoop-fork
-mvn clean install -DskipTests=true -s maven-settings.xml
-
-cd ../infinispan-hadoop-integration
-mvn clean install
-
-cd ..
-
+git clone -b ISPN-5191/hadoop-integration --single-branch https://github.com/infinispan/infinispan.git
+cd infinispan && mvn clean install -DskipTests=true -s maven-settings.xml
 ```
 
-### Generate sample file
-
-Run script passing the number of lines of the input file (keep it less than 1 million)
-
-```
-cd hadoop-demo
-./generate-file.sh 100000
-```
+Edit cluster.sh and change the variable ```$ISPN_HOME``` to point to the sources folder above 
 
 ### Build cluster
 
@@ -46,7 +27,7 @@ Run script to create the cluster passing the number of nodes. Must be root if do
 
 ```./cluster.sh 3``` 
 
-Each node will be a hadoop slave plus an infinispan server node
+Each node will be a hadoop slave, infinispan server node and spark worker
 
 After the cluster is created, take note of the master IP
 
@@ -63,23 +44,17 @@ and the spark cluster admin at:
 http://<master ip>:8081
 ```
 
-### Populate cache
-
-Open project infinispan-hadoop-integration in the IDE and run main class ```org.infinispan.hadoopintegration.util.WorldCounterPopulator``` to populate the cache with the generated file. The following parameter should be passed
-
-``` --host <master ip> --file ../hadoop-demo/file.txt --cachename map-reduce-in ```
-
 ### Run the hadoop job
 
-To run the job that reads and writes from/to infinispan
+To run the job that reads and writes from/to infinispan:
 
 ``` 
 ssh root@<master ip>
 cd /home/hadoop
-./run_hadoop_infinispan.sh <master ip>
+./run_hadoop_infinispan.sh
 ```
 
-To run the same job that reads and writes from/to hdfs
+To run the same job that reads and writes from/to hdfs:
 
 ```
 ssh root@<master ip>
@@ -91,63 +66,43 @@ cd /home/hadoop
 ### Checking output
 
 Output will be in the cache 'map-reduce-out'
-Project infinispan-hadoop-integration has a class to dump the cache:
+To read the output, run (outside docker):
 
-``` org.infinispan.hadoopintegration.util.ControllerCache --host <any docker host> --cachename map-reduce-out --dump ```
+``` ./dump.sh | more ```
 
 
-### Going further
+### Run spark 
 
 The existence of an specific InputFormat allows for infinispan to become a citizen of the Hadoop ecosystem. Particularly,
 it can be used as a data source for Apache Spark.
 
 In order to run the same map reduce job, but as a Scala script through spark:
 
-Unzip the spark distribution
-
-Run
-
-``` spark-1.2.0-bin-hadoop1/bin/spark-shell --master spark://<master ip>:7077 --jars path/to/hadoop-sample-1.0-SNAPSHOT-jar-with-dependencies.jar ```
-
-The following scala script will set a ```JobConf``` and run a count on the infinispan data:
 
 ```
-// Replace the master ip
-val host = "172.17.0.56"
-import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.conf.Configuration
-import com.gustavonalle.hadoop._
-import org.infinispan.hadoopintegration.mapreduce.input._
-import org.infinispan.hadoopintegration.mapreduce.output._
-import org.apache.hadoop.io._
+cd shell
+```
 
-val configuration = new Configuration()
-configuration.set("mapreduce.ispn.inputsplit.remote.cache.host", host)
-configuration.set("mapreduce.ispn.input.remote.cache.host", host);
-configuration.set("mapreduce.ispn.output.remote.cache.host", host);
-configuration.set("mapreduce.ispn.input.cache.name", "map-reduce-in");
-configuration.set("mapreduce.ispn.output.cache.name", "map-reduce-out");
-configuration.set("mapreduce.ispn.input.converter", classOf[InputConverter].getCanonicalName())
-configuration.set("mapreduce.ispn.output.converter", classOf[OutputConverter].getCanonicalName())
-val jobConf = new JobConf(configuration)
-jobConf.setOutputKeyClass(classOf[Text])
-jobConf.setOutputValueClass(classOf[IntWritable])
-jobConf.setMapperClass(classOf[MapClass]);
-jobConf.setReducerClass(classOf[ReduceClass]);
-jobConf.setInputFormat(classOf[InfinispanInputFormat[LongWritable,Text]]);
-jobConf.setOutputFormat(classOf[InfinispanOutputFormat[Text,LongWritable]]);
-val file = sc.hadoopRDD(jobConf,classOf[InfinispanInputFormat[LongWritable,Text]],classOf[LongWritable],classOf[Text],1)
+```
+./shell.sh
+```
 
-// Do a simple file count
-file.count
+```
+scala> val master = <master ip>
+scala> val cache = getCache(master)
+scala> cache.size
+scala> val rdd = getRDD(master)
+scala> mr = mapReduce(rdd)
+scala> print(mr)
+```
 
 ```
 Spark also works on top of pure HDFS. The equivalent of doing a wordcount mapreduce on top of HDFS is:
 
 ```
 // replace the master ip
-val file = sc.textFile("hdfs://172.17.0.56:9000/redhat/file.txt")
+val file = sc.textFile(s"hdfs://$master:9000/redhat/file.txt")
 file.count()
-val counts = file.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _).take(2)
+val counts = file.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _).take(10)
 ```
 

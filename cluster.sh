@@ -4,8 +4,13 @@ set -e
 # Number of nodes in the cluster
 N=${1:-3}
 
+# Location of the sources
+ISPN_HOME=/home/gfernandes/code/infinispan/fork/
+
 # Location of the patched infinispan with extra hotrod operations 
-ISPN_SERVER_DIST=../infinispan/server/integration/build/target/infinispan-server-7.1.0.hadoop-SNAPSHOT
+ISPN_SERVER_DIST=$ISPN_HOME/server/integration/build/target/infinispan-server-7.1.0.hadoop-SNAPSHOT
+
+ISPN_SAMPLE_JOB=$ISPN_HOME/hadoop/sample/target/hadoop-integration-sample-jar-with-dependencies.jar
 
 function run()
 {
@@ -67,7 +72,8 @@ sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "nohup /root/ispn-serv
 
 function copy_job() 
 {
- copy_file $1 '*.jar' /home/hadoop
+ 
+ copy_file $1 $ISPN_SAMPLE_JOB /home/hadoop
  copy_file $1 '*.txt' /home/hadoop
  copy_file $1 '*.sh' /home/hadoop
  copy_file $1 '*.tgz' /root/
@@ -75,17 +81,17 @@ function copy_job()
 
 function spark_download() 
 {
-wget -nc http://d3kbcqa49mib13.cloudfront.net/spark-1.2.0-bin-hadoop1.tgz 
+wget -nc http://d3kbcqa49mib13.cloudfront.net/spark-1.1.1-bin-hadoop1.tgz 
 }
 
 function spark_server() 
 {
-sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- spark-1.2.0-bin-hadoop1.tgz > log.log && export SPARK_MASTER_IP=$1 && /root/spark-1.2.0-bin-hadoop1/sbin/start-master.sh"
+sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- spark-1.1.1-bin-hadoop1.tgz > log.log && export SPARK_MASTER_IP=$1 && /root/spark-1.1.1-bin-hadoop1/sbin/start-master.sh"
 }
 
 function spark_worker() 
 {
-sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- /root/spark-1.2.0-bin-hadoop1.tgz > log.log && /root/spark-1.2.0-bin-hadoop1/sbin/start-slave.sh $3 spark://$2:7077 -i $1"
+sshpass -p "root" ssh -o StrictHostKeyChecking=no root@$1 "cd /root/ && tar xzvf- /root/spark-1.1.1-bin-hadoop1.tgz > log.log && /root/spark-1.1.1-bin-hadoop1/sbin/start-slave.sh $3 spark://$2:7077 -i $1"
 }
 
 echo "Creating a cluster of $N slaves"
@@ -97,6 +103,7 @@ IP_MASTER=$(ip $IDMASTER)
 
 echo "Master created, ip address is $IP_MASTER"
 
+./generate-file.sh 100000
 spark_download
 copy_keys $IP_MASTER
 replace_hosts $IP_MASTER
@@ -131,4 +138,10 @@ echo "Starting process"
 exec_cmd $IP_MASTER "/etc/init.d/hadoop-master start"  
 exec_cmd $IP_MASTER "/etc/init.d/hadoop-jobtracker start"  
 
+echo "Populating ISPN cache"
+java -cp $ISPN_SAMPLE_JOB org.infinispan.hadoopintegration.util.WordCounterPopulator --file file.txt --cachename map-reduce-in --host $IP_MASTER 
+
 echo  "Cluster started. Master is $IP_MASTER"
+
+echo "java -cp $ISPN_SAMPLE_JOB org.infinispan.hadoopintegration.util.ControllerCache --host $IP_MASTER --cachename map-reduce-out --dump" > dump.sh 
+chmod +x ./dump.sh

@@ -1,4 +1,5 @@
 HADOOP_USER=hadoop
+MASTER_IP=$(/sbin/ifconfig | grep 172 | awk '{print $2}')
 echo "Running hadoop job..."
-su $HADOOP_USER -s /bin/sh -c "hadoop jar hadoop-sample-1.0-SNAPSHOT-jar-with-dependencies.jar com.gustavonalle.hadoop.Main $1"
+su $HADOOP_USER -s /bin/sh -c "hadoop jar hadoop-integration-sample-jar-with-dependencies.jar org.infinispan.hadoopintegration.sample.Main $MASTER_IP"
 echo "Finished hadoop job"
