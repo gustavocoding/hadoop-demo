@@ -81,9 +81,6 @@ In order to run the same map reduce job, but as a Scala script through spark:
 
 ```
 cd shell
-```
-
-```
 ./shell.sh
 ```
 
@@ -92,15 +89,14 @@ scala> val master = <master ip>
 scala> val cache = getCache(master)
 scala> cache.size
 scala> val rdd = getRDD(master)
-scala> mr = mapReduce(rdd)
+scala> val mr = mapReduce(rdd)
 scala> print(mr)
 ```
 
-```
 Spark also works on top of pure HDFS. The equivalent of doing a wordcount mapreduce on top of HDFS is:
 
+
 ```
-// replace the master ip
 val file = sc.textFile(s"hdfs://$master:9000/redhat/file.txt")
 file.count()
 val counts = file.flatMap(line => line.split(" ")).map(word => (word, 1)).reduceByKey(_ + _).take(10)
