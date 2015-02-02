@@ -5,7 +5,7 @@ Scripts to demonstrate Infinispan Hadoop Integration inside Docker
 
 ### Requirements
 
-* Linux/MacOS X
+* Linux
 * Docker service started
 * Maven/SBT
 * sshpass (yum install sshpass)
