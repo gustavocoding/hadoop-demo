@@ -60,7 +60,7 @@ To run the same job that reads and writes from/to hdfs:
 ssh root@<master ip>
 cd /home/hadoop
 ./copy-to-hdfs.sh
-./run_hadoop.sh
+./run-hadoop.sh
 ```
 
 ### Checking output
