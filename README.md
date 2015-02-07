@@ -51,7 +51,7 @@ To run the job that reads and writes from/to infinispan:
 ``` 
 ssh root@<master ip>
 cd /home/hadoop
-./run_hadoop_infinispan.sh
+./run-hadoop-infinispan.sh
 ```
 
 To run the same job that reads and writes from/to hdfs:
