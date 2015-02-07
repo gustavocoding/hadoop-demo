@@ -15,7 +15,7 @@ Scripts to demonstrate Infinispan Hadoop Integration inside Docker
 
 Build hadoop integration branch:
 ```
-git clone -b ISPN-5191/hadoop-integration --single-branch https://github.com/infinispan/infinispan.git
+git clone -b ISPN-5191/hadoop_integration --single-branch https://github.com/infinispan/infinispan.git
 cd infinispan && mvn clean install -DskipTests=true -s maven-settings.xml
 ```
 
